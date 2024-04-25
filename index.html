@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>研究生入学预测</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            text-align: center;
+            width: 100%;
+            max-width: 500px;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            margin: 10px;
+        }
+        .input-group {
+            margin: 10px 0;
+        }
+        input[type="number"], select, button {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #output {
+            display: inline-block;
+            background: #e7f5ff;
+            border: 1px solid #bee3f8;
+            border-radius: 5px;
+            padding: 10px;
+            margin-top: 15px;
+            color: #31708f;
+            font-weight: bold;
+            max-width: 100%;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>研究生入学预测</h1>
+    <div class="input-group"><input type="number" id="gre_score" placeholder="请输入 GRE 分数"></div>
+    <div class="input-group"><input type="number" id="toefl_score" placeholder="请输入 TOEFL 分数"></div>
+    <div class="input-group"><input type="number" id="university_rating" placeholder="请输入大学评级" min="1" max="5">
+    </div>
+    <div class="input-group"><input type="number" id="sop" placeholder="请输入 SOP 评级" min="1" max="5"></div>
+    <div class="input-group"><input type="number" id="lor" placeholder="请输入 LOR 评级" min="1" max="5"></div>
+    <div class="input-group"><input type="number" id="cgpa" placeholder="请输入 CGPA" step="0.01"></div>
+    <div class="input-group">
+        <select id="research">
+            <option value="0">无研究经验</option>
+            <option value="1">有研究经验</option>
+        </select>
+    </div>
+    <div class="input-group">
+        <select id="model_choice">
+            <option value="Decision_Tree">决策树</option>
+            <option value="Random_Forest">随机森林</option>
+            <option value="KNN">K最近邻</option>
+            <option value="Linear_Regression">线性回归</option>
+            <option value="AdaBoost">AdaBoost</option>
+            <option value="Keras">Keras模型</option>
+        </select>
+    </div>
+    <div class="input-group">
+        <button onclick="predict()">预测</button>
+    </div>
+    <p>预测结果: <span id="output"></span></p>
+
+    <div class="input-group">
+        <button onclick="generateImage()">生成分布图</button>
+    </div>
+
+    <div class="input-group">
+        <button onclick="generateImage2()">生成热图</button>
+    </div>
+
+    <div class="input-group">
+        <button onclick="generateImage3()">生成配对图</button>
+    </div>
+
+</div>
+<div>
+    <img id="generatedImage" src="1" alt="图片" width="800" height="600" style="display: none;">
+    <p style="display: none"> r2</p>
+</div>
+<div>
+    <img id="generatedImage2" src="2" alt="图片" width="800" height="600" style="display: none;">
+</div>
+<div>
+    <img id="generatedImage3" src="3" alt="图片" width="800" height="600" style="display: none;">
+</div>
+<script>
+    function predict() {
+        var data = {
+            gre_score: document.getElementById('gre_score').value,
+            toefl_score: document.getElementById('toefl_score').value,
+            university_rating: document.getElementById('university_rating').value,
+            sop: document.getElementById('sop').value,
+            lor: document.getElementById('lor').value,
+            cgpa: document.getElementById('cgpa').value,
+            research: document.getElementById('research').value,
+            model_choice: document.getElementById('model_choice').value
+        };
+
+        fetch('http://127.0.0.1:5000/predict', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(data => {
+            const predictionPercentage = (parseFloat(data.prediction) * 100).toFixed(2);
+<!--            let r2Display = ''; // 准备一个变量来可选地显示r2值-->
+<!--            if (modelChoice === 'model_choice') { // 正确的JavaScript语法-->
+<!--                r2Display = 'r2: 0.633, MSE: 0.009' ; // 假设r2也是API返回的一部分-->
+<!--            }-->
+
+            document.getElementById('output').textContent = `模型选择: ${data.model_choice}
+                                                             录取概率: ${predictionPercentage}%`;
+<!--                                                             r2分数: ${r2Display}`;-->
+            console.log('Response:', data);
+        })
+        .catch(error => {
+            console.error('错误:', error.message);
+            document.getElementById('output').textContent = '发生错误: ' + error.message;
+        });
+    }
+
+    function generateImage() {
+        fetch('http://127.0.0.1:5000/generateImage')
+            .then(response => response.blob())
+            .then(blob => {
+                const imageUrl = URL.createObjectURL(blob);
+                document.getElementById('generatedImage').src = imageUrl;
+                document.getElementById('generatedImage').style.display = 'block';
+            })
+            .catch(error => {
+                console.error('错误:', error);
+                document.getElementById('output').textContent = '生成图片失败: ' + error.message;
+            });
+    }
+
+    function generateImage2() {
+        fetch('http://127.0.0.1:5000/generateImage2')
+            .then(response => response.blob())
+            .then(blob => {
+                const imageUrl = URL.createObjectURL(blob);
+                document.getElementById('generatedImage').src = imageUrl;
+                document.getElementById('generatedImage').style.display = 'block';
+            })
+            .catch(error => {
+                console.error('错误:', error);
+                document.getElementById('output').textContent = '生成图片失败: ' + error.message;
+            });
+    }
+
+    function generateImage3() {
+        fetch('http://127.0.0.1:5000/generateImage3')
+            .then(response => response.blob())
+            .then(blob => {
+                const imageUrl = URL.createObjectURL(blob);
+                document.getElementById('generatedImage').src = imageUrl;
+                document.getElementById('generatedImage').style.display = 'block';
+            })
+            .catch(error => {
+                console.error('错误:', error);
+                document.getElementById('output').textContent = '生成图片失败: ' + error.message;
+            });
+    }
+</script>
+</body>
+</html>
